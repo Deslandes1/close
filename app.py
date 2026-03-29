@@ -14,7 +14,6 @@ import io
 import folium
 from streamlit_folium import folium_static
 import json
-from googletrans import Translator  # optional, for live translation; but we'll use a simple dictionary method
 
 # -------------------------------------------------------------------
 # AGRICULTURAL KNOWLEDGE BASE
@@ -225,7 +224,7 @@ TRANSLATIONS = {
         'sidebar_invalid': 'Clé invalide',
         'sidebar_granted': '✅ ACCÈS AUTORISÉ',
         'sidebar_logout': 'Déconnexion',
-        'welcome_sound_js': """...""",  # keep same JS
+        'welcome_sound_js': """...""",
         'main_header': 'MOTEUR IA AGRICOLE v1.0',
         'main_subheader': 'Donnez du pouvoir aux agriculteurs grâce à l’IA',
         'scan_subheader': '🔍 Analyse du sol',
@@ -394,7 +393,7 @@ TRANSLATIONS = {
         'map_marker_popup': 'Jaden: {site}\nTè: {soil}\nRekòt: {crops}',
         'translate_report': '🌐 Tradwi rapò sa a',
         'report_translated': 'Rapò a tradui an {lang}'
-    }
+    },
 }
 
 def get_text(key, lang=None, **kwargs):
@@ -474,17 +473,6 @@ def camera_widget():
                 st.error("No image captured. Please ensure the camera is working.")
     else:
         st.info(get_text('camera_placeholder'))
-
-# -------------------------------------------------------------------
-# HELPER TO TRANSLATE REPORT TEXT
-# -------------------------------------------------------------------
-def translate_report_text(text, target_lang):
-    # We'll use a simple in‑memory mapping for the main fields, but for dynamic text we can use googletrans if installed.
-    # For simplicity, we only translate the known labels; the actual report content is already in the selected language.
-    # The user can click a button to force the whole report to be re‑displayed in the current language.
-    # Actually, the report is generated in the current language, so no extra translation needed.
-    # We'll just provide a button to re‑render the report in the chosen language.
-    return text  # placeholder – not used because we regenerate report
 
 # -------------------------------------------------------------------
 # UI CONFIG
@@ -633,11 +621,8 @@ if st.session_state.authenticated:
     notes = st.text_area(get_text('notes_label'))
     area_hectares = st.number_input(get_text('weight_label'), value=1.0, min_value=0.1, step=0.1)
 
-    # Store last report content to allow translation
     if 'last_report_html' not in st.session_state:
         st.session_state.last_report_html = ""
-    if 'last_soil_type' not in st.session_state:
-        st.session_state.last_soil_type = None
 
     if st.button(get_text('execute_button')):
         if st.session_state.captured_image:
@@ -664,7 +649,6 @@ if st.session_state.authenticated:
             planting_season = soil_info["planting_season"][lang]
             harvest = soil_info["harvest_months"][lang]
 
-            # Yield estimation
             base_yield_usd = 800
             if soil_type == "loam":
                 multiplier = 1.2
@@ -693,7 +677,6 @@ if st.session_state.authenticated:
                 "AI_Confidence": f"{confidence:.2f}"
             })
 
-            # Generate report in current language
             report_html = f"""
             <div class="report-card">
                 <h2 style="color:#D21034; text-align:center;">{get_text('report_title')}</h2>
@@ -711,20 +694,16 @@ if st.session_state.authenticated:
             </div>
             """
             st.session_state.last_report_html = report_html
-            st.session_state.last_soil_type = soil_type
             st.markdown(report_html, unsafe_allow_html=True)
         else:
             st.error(get_text('no_photo_error'))
 
-    # If a report was generated, show a button to re‑translate it (re‑generate with current language)
     if st.session_state.last_report_html:
         if st.button(get_text('translate_report')):
-            # Regenerate the report in the current language using stored data
-            # We need the last analysis data. We can fetch from the latest log entry.
+            # Regenerate report in current language from last log entry
             if st.session_state.discovery_log:
                 last = st.session_state.discovery_log[-1]
                 soil_type = last["Soil_Type"].lower()
-                # Re‑fetch soil info
                 soil_info = SOIL_TYPES.get(soil_type, SOIL_TYPES["unknown"])
                 lang = st.session_state.language
                 fertility = soil_info["fertility"][lang]
