@@ -14,103 +14,110 @@ import io
 import folium
 from streamlit_folium import folium_static
 import json
+from googletrans import Translator  # optional, for live translation; but we'll use a simple dictionary method
 
 # -------------------------------------------------------------------
 # AGRICULTURAL KNOWLEDGE BASE
 # -------------------------------------------------------------------
-# Mapping of soil types to fertility and crop suitability
 SOIL_TYPES = {
     "loam": {
-        "fertility": "High",
-        "crops": ["rice", "corn", "beans", "sorghum", "vegetables"],
-        "improvement": "Maintain organic matter; rotate crops.",
-        "planting_season": "Spring / Early Summer",
-        "harvest_months": "3‑4 months after planting"
+        "fertility": {"en": "High", "fr": "Élevée", "es": "Alta", "ht": "Wòl"},
+        "crops": {"en": ["rice", "corn", "beans", "sorghum", "vegetables"],
+                  "fr": ["riz", "maïs", "haricots", "sorgho", "légumes"],
+                  "es": ["arroz", "maíz", "frijoles", "sorgo", "vegetales"],
+                  "ht": ["diri", "mayi", "pwa", "sorgo", "legim"]},
+        "improvement": {"en": "Maintain organic matter; rotate crops.",
+                        "fr": "Maintenez la matière organique; pratiquez la rotation des cultures.",
+                        "es": "Mantenga la materia orgánica; rote los cultivos.",
+                        "ht": "Kenbe matyè òganik; fè wotasyon rekòt."},
+        "planting_season": {"en": "Spring / Early Summer",
+                            "fr": "Printemps / Début d'été",
+                            "es": "Primavera / Principios de verano",
+                            "ht": "Prentan / Kòmansman ete"},
+        "harvest_months": {"en": "3‑4 months after planting",
+                           "fr": "3‑4 mois après la plantation",
+                           "es": "3‑4 meses después de la siembra",
+                           "ht": "3‑4 mwa apre plante"}
     },
     "clay": {
-        "fertility": "Medium (but prone to waterlogging)",
-        "crops": ["rice", "sugarcane", "soybeans"],
-        "improvement": "Add sand and organic compost; improve drainage.",
-        "planting_season": "Late Spring",
-        "harvest_months": "4‑5 months after planting"
+        "fertility": {"en": "Medium (but prone to waterlogging)", "fr": "Moyenne (mais sensible à l'engorgement)", "es": "Media (propensa al encharcamiento)", "ht": "Mwayen (men fasil pou gen dlo kouche)"},
+        "crops": {"en": ["rice", "sugarcane", "soybeans"], "fr": ["riz", "canne à sucre", "soja"], "es": ["arroz", "caña de azúcar", "soja"], "ht": ["diri", "kann", "soya"]},
+        "improvement": {"en": "Add sand and organic compost; improve drainage.", "fr": "Ajoutez du sable et du compost organique; améliorez le drainage.", "es": "Añada arena y compost orgánico; mejore el drenaje.", "ht": "Ajoute sab ak konpò òganik; amelyore drenaj."},
+        "planting_season": {"en": "Late Spring", "fr": "Fin du printemps", "es": "Finales de primavera", "ht": "Prentan an reta"},
+        "harvest_months": {"en": "4‑5 months after planting", "fr": "4‑5 mois après la plantation", "es": "4‑5 meses después de la siembra", "ht": "4‑5 mwa apre plante"}
     },
     "sandy": {
-        "fertility": "Low (poor water retention)",
-        "crops": ["peanuts", "sweet potatoes", "carrots"],
-        "improvement": "Add clay and organic matter; frequent irrigation.",
-        "planting_season": "Early Spring / Autumn",
-        "harvest_months": "3‑4 months after planting"
+        "fertility": {"en": "Low (poor water retention)", "fr": "Faible (mauvaise rétention d'eau)", "es": "Baja (mala retención de agua)", "ht": "Ba (pa kenbe dlo)"},
+        "crops": {"en": ["peanuts", "sweet potatoes", "carrots"], "fr": ["arachides", "patates douces", "carottes"], "es": ["cacahuetes", "batatas", "zanahorias"], "ht": ["pistach", "patat", "kawòt"]},
+        "improvement": {"en": "Add clay and organic matter; frequent irrigation.", "fr": "Ajoutez de l'argile et de la matière organique; irrigation fréquente.", "es": "Añada arcilla y materia orgánica; riego frecuente.", "ht": "Ajoute ajil ak matyè òganik; irigasyon souvan."},
+        "planting_season": {"en": "Early Spring / Autumn", "fr": "Début du printemps / Automne", "es": "Principios de primavera / Otoño", "ht": "Prentan bonè / Otòn"},
+        "harvest_months": {"en": "3‑4 months after planting", "fr": "3‑4 mois après la plantation", "es": "3‑4 meses después de la siembra", "ht": "3‑4 mwa apre plante"}
     },
     "silt": {
-        "fertility": "High (but erodes easily)",
-        "crops": ["corn", "beans", "wheat"],
-        "improvement": "Plant cover crops; avoid over‑tilling.",
-        "planting_season": "Spring",
-        "harvest_months": "3‑4 months after planting"
+        "fertility": {"en": "High (but erodes easily)", "fr": "Élevée (mais s'érode facilement)", "es": "Alta (pero se erosiona fácilmente)", "ht": "Wòl (men fasil pou erode)"},
+        "crops": {"en": ["corn", "beans", "wheat"], "fr": ["maïs", "haricots", "blé"], "es": ["maíz", "frijoles", "trigo"], "ht": ["mayi", "pwa", "ble"]},
+        "improvement": {"en": "Plant cover crops; avoid over‑tilling.", "fr": "Plantez des cultures de couverture; évitez le sur‑labourage.", "es": "Siembre cultivos de cobertura; evite el exceso de labranza.", "ht": "Plante rekòt kouvèti; evite twòp travay tè."},
+        "planting_season": {"en": "Spring", "fr": "Printemps", "es": "Primavera", "ht": "Prentan"},
+        "harvest_months": {"en": "3‑4 months after planting", "fr": "3‑4 mois après la plantation", "es": "3‑4 meses después de la siembra", "ht": "3‑4 mwa apre plante"}
     },
     "peat": {
-        "fertility": "High (rich in organic matter)",
-        "crops": ["vegetables", "berries", "potatoes"],
-        "improvement": "Maintain pH; avoid over‑drainage.",
-        "planting_season": "Spring",
-        "harvest_months": "3‑4 months after planting"
+        "fertility": {"en": "High (rich in organic matter)", "fr": "Élevée (riche en matière organique)", "es": "Alta (rica en materia orgánica)", "ht": "Wòl (rich an matyè òganik)"},
+        "crops": {"en": ["vegetables", "berries", "potatoes"], "fr": ["légumes", "baies", "pommes de terre"], "es": ["vegetales", "bayas", "papas"], "ht": ["legim", "bè", "pòmdetè"]},
+        "improvement": {"en": "Maintain pH; avoid over‑drainage.", "fr": "Maintenez le pH; évitez le sur‑drainage.", "es": "Mantenga el pH; evite el exceso de drenaje.", "ht": "Kenbe pH; evite twòp drenaj."},
+        "planting_season": {"en": "Spring", "fr": "Printemps", "es": "Primavera", "ht": "Prentan"},
+        "harvest_months": {"en": "3‑4 months after planting", "fr": "3‑4 mois après la plantation", "es": "3‑4 meses después de la siembra", "ht": "3‑4 mwa apre plante"}
     },
     "chalky": {
-        "fertility": "Low (alkaline, stony)",
-        "crops": ["barley", "sugar beets", "spinach"],
-        "improvement": "Add sulphur and organic fertilisers.",
-        "planting_season": "Late Spring",
-        "harvest_months": "4‑5 months after planting"
+        "fertility": {"en": "Low (alkaline, stony)", "fr": "Faible (alcalin, pierreux)", "es": "Baja (alcalino, pedregoso)", "ht": "Ba (alkalin, gen wòch)"},
+        "crops": {"en": ["barley", "sugar beets", "spinach"], "fr": ["orge", "betteraves sucrières", "épinards"], "es": ["cebada", "remolacha azucarera", "espinacas"], "ht": ["lòrj", "bètrav", "zepina"]},
+        "improvement": {"en": "Add sulphur and organic fertilisers.", "fr": "Ajoutez du soufre et des engrais organiques.", "es": "Añada azufre y fertilizantes orgánicos.", "ht": "Ajoute souf ak angrè òganik."},
+        "planting_season": {"en": "Late Spring", "fr": "Fin du printemps", "es": "Finales de primavera", "ht": "Prentan an reta"},
+        "harvest_months": {"en": "4‑5 months after planting", "fr": "4‑5 mois après la plantation", "es": "4‑5 meses después de la siembra", "ht": "4‑5 mwa apre plante"}
     },
     "rocky": {
-        "fertility": "Very Low",
-        "crops": ["olives", "grapes (vines)"],
-        "improvement": "Remove large rocks; build raised beds.",
-        "planting_season": "Not recommended for staple crops",
-        "harvest_months": "N/A"
+        "fertility": {"en": "Very Low", "fr": "Très faible", "es": "Muy baja", "ht": "Trè ba"},
+        "crops": {"en": ["olives", "grapes (vines)"], "fr": ["olives", "raisins (vigne)"], "es": ["aceitunas", "uvas (vid)"], "ht": ["oliv", "rezen (pye rezen)"]},
+        "improvement": {"en": "Remove large rocks; build raised beds.", "fr": "Enlevez les grosses pierres; construisez des plates‑bandes surélevées.", "es": "Retire las rocas grandes; construya camas elevadas.", "ht": "Retire gwo wòch; konstruire kabann ki wo."},
+        "planting_season": {"en": "Not recommended for staple crops", "fr": "Non recommandé pour les cultures de base", "es": "No recomendado para cultivos básicos", "ht": "Pa rekòmande pou rekòt debaz"},
+        "harvest_months": {"en": "N/A", "fr": "N/A", "es": "N/A", "ht": "N/A"}
     },
     "unknown": {
-        "fertility": "Unknown",
-        "crops": ["Perform soil test first"],
-        "improvement": "Consult local agronomist.",
-        "planting_season": "N/A",
-        "harvest_months": "N/A"
+        "fertility": {"en": "Unknown", "fr": "Inconnue", "es": "Desconocida", "ht": "Enkoni"},
+        "crops": {"en": ["Perform soil test first"], "fr": ["Effectuez d'abord une analyse de sol"], "es": ["Realice primero una prueba de suelo"], "ht": ["Fè tès tè an premye"]},
+        "improvement": {"en": "Consult local agronomist.", "fr": "Consultez un agronome local.", "es": "Consulte a un agrónomo local.", "ht": "Konsilte yon agwonòm lokal."},
+        "planting_season": {"en": "N/A", "fr": "N/A", "es": "N/A", "ht": "N/A"},
+        "harvest_months": {"en": "N/A", "fr": "N/A", "es": "N/A", "ht": "N/A"}
     }
 }
 
-# Haitian staple crops
-HAITIAN_CROPS = ["rice", "corn", "beans", "sorghum", "sugarcane", "sweet potato", "yam", "plantain"]
-
 def soil_type_from_text(text):
-    """Map user notes or AI prediction to a soil type."""
     text_lower = text.lower()
-    if any(word in text_lower for word in ["loam", "loamy"]):
+    if any(w in text_lower for w in ["loam", "loamy"]):
         return "loam"
-    if any(word in text_lower for word in ["clay", "clayey"]):
+    if any(w in text_lower for w in ["clay", "clayey"]):
         return "clay"
-    if any(word in text_lower for word in ["sand", "sandy"]):
+    if any(w in text_lower for w in ["sand", "sandy"]):
         return "sandy"
-    if any(word in text_lower for word in ["silt", "silty"]):
+    if any(w in text_lower for w in ["silt", "silty"]):
         return "silt"
-    if any(word in text_lower for word in ["peat", "peaty"]):
+    if any(w in text_lower for w in ["peat", "peaty"]):
         return "peat"
-    if any(word in text_lower for word in ["chalk", "chalky"]):
+    if any(w in text_lower for w in ["chalk", "chalky"]):
         return "chalky"
-    if any(word in text_lower for word in ["rock", "rocky", "stone"]):
+    if any(w in text_lower for w in ["rock", "rocky", "stone"]):
         return "rocky"
     return "unknown"
 
 # -------------------------------------------------------------------
-# GLOBAL DATABASE (for storing analysis logs)
+# GLOBAL DATABASE & SESSION STATE
 # -------------------------------------------------------------------
 MASTER_KEY = "20082010"
 MONCASH_ID = "50947385663"
 
-# --- SESSION STATE ---
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
 if 'discovery_log' not in st.session_state:
-    st.session_state.discovery_log = []   # now stores agricultural reports
+    st.session_state.discovery_log = []
 if 'language' not in st.session_state:
     st.session_state.language = 'en'
 if 'captured_image' not in st.session_state:
@@ -118,19 +125,20 @@ if 'captured_image' not in st.session_state:
 if 'camera_method' not in st.session_state:
     st.session_state.camera_method = 'camera'
 if 'current_lat' not in st.session_state:
-    st.session_state.current_lat = 18.5  # Haiti approximate center
+    st.session_state.current_lat = 18.5
 if 'current_lon' not in st.session_state:
     st.session_state.current_lon = -72.3
 
-# --- TRANSLATIONS (simplified for agriculture – reuse most keys, add new ones) ---
-# We'll extend the existing translations with new agricultural terms.
-# For brevity, I'll only show English and add placeholders for others.
-# In the final code, you should keep all four languages as in the original.
+# -------------------------------------------------------------------
+# TRANSLATIONS (full for all UI elements)
+# -------------------------------------------------------------------
 TRANSLATIONS = {
     'en': {
         'app_title': 'AGRICULTURAL AI ENGINE v1.0',
         'app_subtitle': 'Soil Analysis & Crop Planning',
         'owner_collab': 'Owner: <strong>Gesner Deslandes</strong> &nbsp;|&nbsp; Collaborators: Gesner Junior Deslandes, Roosevelt Deslandes, Sebastien Stephane Deslandes & Zendaya Christelle Deslandes',
+        'made_in_haiti': 'Made in 🇭🇹 Haiti by GlobalInternet.py',
+        'contact_info': '📞 Owner Phone: (509) 4738-5663 | 📧 Email: deslandes78@gmail.com',
         'sidebar_title': '🛡️ Access Tool',
         'sidebar_activation': 'Activation via MonCash: **{moncash}**',
         'sidebar_key_label': 'Key:',
@@ -201,12 +209,192 @@ TRANSLATIONS = {
         'unknown_soil': 'Unknown Soil Type',
         'map_title': '🗺️ Analysed Fields Map',
         'map_marker_popup': 'Field: {site}\nSoil: {soil}\nCrops: {crops}',
-        'made_in_haiti': 'Made in 🇭🇹 Haiti by GlobalInternet.py',
-        'contact_info': '📞 Owner Phone: (509) 4738-5663 | 📧 Email: deslandes78@gmail.com',
+        'translate_report': '🌐 Translate this report',
+        'report_translated': 'Report translated to {lang}'
     },
-    'fr': { ... },  # (keep existing French dictionary with similar agricultural terms)
-    'es': { ... },  # (keep existing Spanish)
-    'ht': { ... },  # (keep existing Haitian Creole)
+    'fr': {
+        'app_title': 'MOTEUR IA AGRICOLE v1.0',
+        'app_subtitle': 'Analyse du sol et planification des cultures',
+        'owner_collab': 'Propriétaire: <strong>Gesner Deslandes</strong> &nbsp;|&nbsp; Collaborateurs: Gesner Junior Deslandes, Roosevelt Deslandes, Sebastien Stephane Deslandes & Zendaya Christelle Deslandes',
+        'made_in_haiti': 'Fabriqué en 🇭🇹 Haïti par GlobalInternet.py',
+        'contact_info': '📞 Téléphone du propriétaire: (509) 4738-5663 | 📧 Email: deslandes78@gmail.com',
+        'sidebar_title': '🛡️ Accès à l’outil',
+        'sidebar_activation': 'Activation via MonCash: **{moncash}**',
+        'sidebar_key_label': 'Clé:',
+        'sidebar_unlock': 'Déverrouiller',
+        'sidebar_invalid': 'Clé invalide',
+        'sidebar_granted': '✅ ACCÈS AUTORISÉ',
+        'sidebar_logout': 'Déconnexion',
+        'welcome_sound_js': """...""",  # keep same JS
+        'main_header': 'MOTEUR IA AGRICOLE v1.0',
+        'main_subheader': 'Donnez du pouvoir aux agriculteurs grâce à l’IA',
+        'scan_subheader': '🔍 Analyse du sol',
+        'camera_method_label': 'Comment capturer l’échantillon de sol:',
+        'camera_option': '📸 Prendre une photo avec la caméra (bouton de retournement ci-dessous)',
+        'upload_option': '📁 Télécharger une photo depuis l’appareil',
+        'camera_instruction': '📸 Pointez la caméra vers la surface du sol. Utilisez le bouton Retournement pour passer entre caméra avant et arrière.',
+        'upload_instruction': '📸 Prenez une photo de votre sol et téléchargez-la ici.',
+        'reverse_button': '↻ Retourner la caméra',
+        'capture_button': '📷 Capturer l’image',
+        'camera_placeholder': 'Le flux vidéo apparaîtra ici après autorisation.',
+        'site_label': 'Nom du champ:',
+        'site_placeholder': 'Champ Nord',
+        'location_label': '📍 Emplacement du champ (Lat/Lon)',
+        'location_manual': 'Coordonnées manuelles',
+        'location_auto': 'Utiliser ma position actuelle',
+        'lat_label': 'Latitude',
+        'lon_label': 'Longitude',
+        'get_location_button': '📍 Obtenir ma position',
+        'photo_label': 'Photo de l’échantillon de sol',
+        'notes_label': 'Observations supplémentaires (couleur, texture, etc.) :',
+        'weight_label': 'Superficie du champ (hectares):',
+        'execute_button': '🚀 ANALYSER LE SOL',
+        'no_photo_error': 'Veuillez d’abord capturer ou télécharger une image.',
+        'report_title': 'RAPPORT D’ANALYSE DU SOL',
+        'soil_type_label': 'Type de sol:',
+        'fertility_label': 'Niveau de fertilité:',
+        'recommended_crops': 'Cultures recommandées pour ce sol:',
+        'improvement_label': 'Comment améliorer ce sol:',
+        'planting_season_label': 'Saison de plantation optimale:',
+        'harvest_label': 'Période de récolte prévue:',
+        'value_usd_label': 'Valeur estimée de la récolte (USD) : ${value:,.2f}',
+        'value_htg_label': 'Valeur estimée de la récolte (HTG) : {value:,.2f}',
+        'solution_label': 'Conseil à l’agriculteur:',
+        'solution_text': 'Concentrez-vous sur {crops}. {improvement}',
+        'strategic_intel': '🌍 Historique des champs',
+        'recent_log': '**Analyses de sol récentes:**',
+        'download_button': '📊 Télécharger l’historique des analyses (CSV)',
+        'no_data_info': 'Aucune analyse enregistrée pour le moment. Effectuez une analyse pour générer des données.',
+        'access_warning': 'Veuillez entrer votre clé principale dans la barre latérale pour commencer.',
+        'language_selector': 'Langue / Language',
+        'unknown_soil': 'Type de sol inconnu',
+        'map_title': '🗺️ Carte des champs analysés',
+        'map_marker_popup': 'Champ: {site}\nSol: {soil}\nCultures: {crops}',
+        'translate_report': '🌐 Traduire ce rapport',
+        'report_translated': 'Rapport traduit en {lang}'
+    },
+    'es': {
+        'app_title': 'MOTOR IA AGRÍCOLA v1.0',
+        'app_subtitle': 'Análisis de suelo y planificación de cultivos',
+        'owner_collab': 'Propietario: <strong>Gesner Deslandes</strong> &nbsp;|&nbsp; Colaboradores: Gesner Junior Deslandes, Roosevelt Deslandes, Sebastien Stephane Deslandes & Zendaya Christelle Deslandes',
+        'made_in_haiti': 'Hecho en 🇭🇹 Haití por GlobalInternet.py',
+        'contact_info': '📞 Teléfono del propietario: (509) 4738-5663 | 📧 Correo: deslandes78@gmail.com',
+        'sidebar_title': '🛡️ Acceso a la herramienta',
+        'sidebar_activation': 'Activación vía MonCash: **{moncash}**',
+        'sidebar_key_label': 'Clave:',
+        'sidebar_unlock': 'Desbloquear',
+        'sidebar_invalid': 'Clave inválida',
+        'sidebar_granted': '✅ ACCESO CONCEDIDO',
+        'sidebar_logout': 'Cerrar sesión',
+        'welcome_sound_js': """...""",
+        'main_header': 'MOTOR IA AGRÍCOLA v1.0',
+        'main_subheader': 'Empodere a los agricultores con inteligencia artificial',
+        'scan_subheader': '🔍 Análisis del suelo',
+        'camera_method_label': 'Cómo capturar la muestra de suelo:',
+        'camera_option': '📸 Tomar foto con la cámara (botón de volteo abajo)',
+        'upload_option': '📁 Subir foto desde el dispositivo',
+        'camera_instruction': '📸 Apunte la cámara a la superficie del suelo. Use el botón Voltear para cambiar entre cámara frontal y trasera.',
+        'upload_instruction': '📸 Tome una foto de su suelo y súbala aquí.',
+        'reverse_button': '↻ Voltear cámara',
+        'capture_button': '📷 Capturar imagen',
+        'camera_placeholder': 'La transmisión de la cámara aparecerá aquí después de conceder el permiso.',
+        'site_label': 'Nombre del campo:',
+        'site_placeholder': 'Campo Norte',
+        'location_label': '📍 Ubicación del campo (Lat/Lon)',
+        'location_manual': 'Coordenadas manuales',
+        'location_auto': 'Usar mi ubicación actual',
+        'lat_label': 'Latitud',
+        'lon_label': 'Longitud',
+        'get_location_button': '📍 Obtener mi ubicación',
+        'photo_label': 'Foto de la muestra de suelo',
+        'notes_label': 'Observaciones adicionales (color, textura, etc.):',
+        'weight_label': 'Área del campo (hectáreas):',
+        'execute_button': '🚀 ANALIZAR SUELO',
+        'no_photo_error': 'Primero capture o suba una imagen.',
+        'report_title': 'INFORME DE ANÁLISIS DE SUELO',
+        'soil_type_label': 'Tipo de suelo:',
+        'fertility_label': 'Nivel de fertilidad:',
+        'recommended_crops': 'Cultivos recomendados para este suelo:',
+        'improvement_label': 'Cómo mejorar este suelo:',
+        'planting_season_label': 'Temporada de siembra óptima:',
+        'harvest_label': 'Tiempo de cosecha esperado:',
+        'value_usd_label': 'Valor estimado de la cosecha (USD): ${value:,.2f}',
+        'value_htg_label': 'Valor estimado de la cosecha (HTG): {value:,.2f}',
+        'solution_label': 'Consejo para el agricultor:',
+        'solution_text': 'Concéntrese en {crops}. {improvement}',
+        'strategic_intel': '🌍 Historial de campos',
+        'recent_log': '**Análisis de suelo recientes:**',
+        'download_button': '📊 Descargar historial de análisis (CSV)',
+        'no_data_info': 'Aún no se han registrado análisis. Realice un análisis para generar datos.',
+        'access_warning': 'Por favor ingrese su clave maestra en la barra lateral para comenzar.',
+        'language_selector': 'Idioma / Language',
+        'unknown_soil': 'Tipo de suelo desconocido',
+        'map_title': '🗺️ Mapa de campos analizados',
+        'map_marker_popup': 'Campo: {site}\nSuelo: {soil}\nCultivos: {crops}',
+        'translate_report': '🌐 Traducir este informe',
+        'report_translated': 'Informe traducido al {lang}'
+    },
+    'ht': {
+        'app_title': 'MOTEUR IA AGRYKÒL v1.0',
+        'app_subtitle': 'Analiz tè ak planifikasyon rekòt',
+        'owner_collab': 'Pwopriyetè: <strong>Gesner Deslandes</strong> &nbsp;|&nbsp; Kolaboratè: Gesner Junior Deslandes, Roosevelt Deslandes, Sebastien Stephane Deslandes & Zendaya Christelle Deslandes',
+        'made_in_haiti': 'Fèt nan 🇭🇹 Ayiti pa GlobalInternet.py',
+        'contact_info': '📞 Telefòn pwopriyetè: (509) 4738-5663 | 📧 Imèl: deslandes78@gmail.com',
+        'sidebar_title': '🛡️ Aksè zouti',
+        'sidebar_activation': 'Aktivasyon atravè MonCash: **{moncash}**',
+        'sidebar_key_label': 'Kle:',
+        'sidebar_unlock': 'Deklannche',
+        'sidebar_invalid': 'Kle pa bon',
+        'sidebar_granted': '✅ AKSÈ AKÒDE',
+        'sidebar_logout': 'Dekonekte',
+        'welcome_sound_js': """...""",
+        'main_header': 'MOTEUR IA AGRYKÒL v1.0',
+        'main_subheader': 'Bay kiltivatè yo pouvwa ak entèlijans atifisyèl',
+        'scan_subheader': '🔍 Analiz tè',
+        'camera_method_label': 'Ki jan pou pran echantiyon tè a:',
+        'camera_option': '📸 Pran foto ak kamera (bouton vire anba a)',
+        'upload_option': '📁 Telechaje foto depi aparèy ou',
+        'camera_instruction': '📸 Montre kamera ou sou sifas tè a. Sèvi ak bouton Vire pou chanje ant kamera devan ak dèyè.',
+        'upload_instruction': '📸 Pran yon foto tè ou epi telechaje li isit la.',
+        'reverse_button': '↻ Vire Kamera',
+        'capture_button': '📷 Pran Foto',
+        'camera_placeholder': 'Flò kamera a ap parèt isit la apre w bay pèmisyon.',
+        'site_label': 'Non jaden:',
+        'site_placeholder': 'Jaden Nò',
+        'location_label': '📍 Kote jaden an (Lat/Lon)',
+        'location_manual': 'Kowòdone manyèl',
+        'location_auto': 'Sèvi ak pozisyon mwen kounye a',
+        'lat_label': 'Latitid',
+        'lon_label': 'Longitid',
+        'get_location_button': '📍 Jwenn pozisyon mwen',
+        'photo_label': 'Foto echantiyon tè',
+        'notes_label': 'Lòt obsèvasyon (koulè, teksti, elatriye):',
+        'weight_label': 'Sifas jaden an (ektar):',
+        'execute_button': '🚀 ANALIZE TÈ',
+        'no_photo_error': 'Tanpri pran yon foto oswa telechaje yon imaj an premye.',
+        'report_title': 'RAPÒ ANALIZ TÈ',
+        'soil_type_label': 'Kalite tè:',
+        'fertility_label': 'Nivo fètilite:',
+        'recommended_crops': 'Rekòt rekòmande pou tè sa a:',
+        'improvement_label': 'Kijan pou amelyore tè sa a:',
+        'planting_season_label': 'Sezon plante pi bon:',
+        'harvest_label': 'Lè rekòlte espere:',
+        'value_usd_label': 'Valè rekòlte estime (USD): ${value:,.2f}',
+        'value_htg_label': 'Valè rekòlte estime (HTG): {value:,.2f}',
+        'solution_label': 'Konsèy pou kiltivatè a:',
+        'solution_text': 'Konsantre ou sou {crops}. {improvement}',
+        'strategic_intel': '🌍 Istwa jaden',
+        'recent_log': '**Analiz tè resan:**',
+        'download_button': '📊 Telechaje istorik analiz (CSV)',
+        'no_data_info': 'Pa gen okenn analiz anrejistre ankò. Fè yon analiz pou jenere done.',
+        'access_warning': 'Tanpri antre kle prensipal ou nan ba a pou kòmanse.',
+        'language_selector': 'Lang / Language',
+        'unknown_soil': 'Kalite tè enkoni',
+        'map_title': '🗺️ Kat jaden yo analize',
+        'map_marker_popup': 'Jaden: {site}\nTè: {soil}\nRekòt: {crops}',
+        'translate_report': '🌐 Tradwi rapò sa a',
+        'report_translated': 'Rapò a tradui an {lang}'
+    }
 }
 
 def get_text(key, lang=None, **kwargs):
@@ -217,16 +405,14 @@ def get_text(key, lang=None, **kwargs):
         return text.format(**kwargs)
     return text
 
-# --- IMAGE CLASSIFICATION MODEL (unchanged) ---
+# -------------------------------------------------------------------
+# IMAGE CLASSIFICATION
+# -------------------------------------------------------------------
 @st.cache_resource
 def load_model():
-    model = MobileNetV2(weights='imagenet')
-    return model
+    return MobileNetV2(weights='imagenet')
 
 def classify_image(image_bytes):
-    """
-    Classify image and return a soil type based on visual cues.
-    """
     try:
         model = load_model()
         img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
@@ -238,7 +424,6 @@ def classify_image(image_bytes):
         preds = model.predict(img_array, verbose=0)
         decoded = decode_predictions(preds, top=3)[0]
 
-        # Simple mapping from ImageNet labels to soil type
         mapping = {
             'soil': 'loam', 'earth': 'loam', 'dirt': 'loam',
             'sand': 'sandy', 'sandbar': 'sandy',
@@ -252,13 +437,14 @@ def classify_image(image_bytes):
             for keyword, soil in mapping.items():
                 if keyword in label_lower:
                     return soil, prob
-        # Default
         return "unknown", decoded[0][2]
     except Exception as e:
         st.error(f"Image classification failed: {e}")
         return "unknown", 0
 
-# --- Video processor (same) ---
+# -------------------------------------------------------------------
+# VIDEO PROCESSOR
+# -------------------------------------------------------------------
 class VideoProcessor(VideoProcessorBase):
     def __init__(self):
         self.image = None
@@ -290,11 +476,22 @@ def camera_widget():
         st.info(get_text('camera_placeholder'))
 
 # -------------------------------------------------------------------
+# HELPER TO TRANSLATE REPORT TEXT
+# -------------------------------------------------------------------
+def translate_report_text(text, target_lang):
+    # We'll use a simple in‑memory mapping for the main fields, but for dynamic text we can use googletrans if installed.
+    # For simplicity, we only translate the known labels; the actual report content is already in the selected language.
+    # The user can click a button to force the whole report to be re‑displayed in the current language.
+    # Actually, the report is generated in the current language, so no extra translation needed.
+    # We'll just provide a button to re‑render the report in the chosen language.
+    return text  # placeholder – not used because we regenerate report
+
+# -------------------------------------------------------------------
 # UI CONFIG
 # -------------------------------------------------------------------
 st.set_page_config(page_title="Agricultural AI Engine", layout="centered")
 
-# Display Haitian flag and branding
+# Haitian flag
 st.markdown("""
 <div style="display: flex; justify-content: center; margin: 20px 0;">
     <svg width="320" height="192" viewBox="0 0 960 576" xmlns="http://www.w3.org/2000/svg">
@@ -375,7 +572,7 @@ if st.session_state.authenticated:
 
     site = st.text_input(get_text('site_label'), get_text('site_placeholder'))
 
-    # Location input (same as before)
+    # Location input
     st.subheader(get_text('location_label'))
     loc_method = st.radio(
         "",
@@ -436,9 +633,14 @@ if st.session_state.authenticated:
     notes = st.text_area(get_text('notes_label'))
     area_hectares = st.number_input(get_text('weight_label'), value=1.0, min_value=0.1, step=0.1)
 
+    # Store last report content to allow translation
+    if 'last_report_html' not in st.session_state:
+        st.session_state.last_report_html = ""
+    if 'last_soil_type' not in st.session_state:
+        st.session_state.last_soil_type = None
+
     if st.button(get_text('execute_button')):
         if st.session_state.captured_image:
-            # Extract image bytes
             img_data = st.session_state.captured_image
             if img_data.startswith('data:image'):
                 img_base64 = img_data.split(',')[1]
@@ -446,27 +648,24 @@ if st.session_state.authenticated:
             else:
                 img_bytes = img_data.encode()
 
-            # Classify soil type from image
             with st.spinner("Analysing soil with AI..."):
                 soil_type, confidence = classify_image(img_bytes)
 
-            # Optionally refine using notes
             if notes.strip():
                 notes_soil = soil_type_from_text(notes)
                 if notes_soil != "unknown":
                     soil_type = notes_soil
 
-            # Get soil data
             soil_info = SOIL_TYPES.get(soil_type, SOIL_TYPES["unknown"])
-            fertility = soil_info["fertility"]
-            recommended_crops = soil_info["crops"]
-            improvement = soil_info["improvement"]
-            planting_season = soil_info["planting_season"]
-            harvest = soil_info["harvest_months"]
+            lang = st.session_state.language
+            fertility = soil_info["fertility"][lang]
+            crops_list = soil_info["crops"][lang]
+            improvement = soil_info["improvement"][lang]
+            planting_season = soil_info["planting_season"][lang]
+            harvest = soil_info["harvest_months"][lang]
 
-            # Estimate yield value (simple dummy calculation)
-            # Assume average yield per hectare for a generic crop
-            base_yield_usd = 800  # USD per hectare (placeholder)
+            # Yield estimation
+            base_yield_usd = 800
             if soil_type == "loam":
                 multiplier = 1.2
             elif soil_type == "clay":
@@ -476,7 +675,7 @@ if st.session_state.authenticated:
             else:
                 multiplier = 0.5
             estimated_value_usd = base_yield_usd * area_hectares * multiplier
-            estimated_value_htg = estimated_value_usd * 131.19  # HTG rate
+            estimated_value_htg = estimated_value_usd * 131.19
 
             rep_id = f"AGRI-{uuid.uuid4().hex[:6].upper()}"
 
@@ -490,30 +689,72 @@ if st.session_state.authenticated:
                 "Longitude": lon,
                 "Area_ha": area_hectares,
                 "Est_Value_USD": estimated_value_usd,
-                "Recommended_Crops": ", ".join(recommended_crops[:3]),
+                "Recommended_Crops": ", ".join(crops_list[:3]),
                 "AI_Confidence": f"{confidence:.2f}"
             })
 
-            # Build report
+            # Generate report in current language
             report_html = f"""
             <div class="report-card">
                 <h2 style="color:#D21034; text-align:center;">{get_text('report_title')}</h2>
                 <hr>
                 <p><b>{get_text('soil_type_label')}</b> {soil_type.capitalize()} (AI confidence: {confidence:.2%})</p>
                 <p><b>{get_text('fertility_label')}</b> {fertility}</p>
-                <p><b>{get_text('recommended_crops')}</b> {', '.join(recommended_crops[:5])}</p>
+                <p><b>{get_text('recommended_crops')}</b> {', '.join(crops_list[:5])}</p>
                 <p><b>{get_text('improvement_label')}</b> {improvement}</p>
                 <p><b>{get_text('planting_season_label')}</b> {planting_season}</p>
                 <p><b>{get_text('harvest_label')}</b> {harvest}</p>
                 <h3 style="color:green;">{get_text('value_usd_label', value=estimated_value_usd)}</h3>
                 <h3 style="color:#00209F;">{get_text('value_htg_label', value=estimated_value_htg)}</h3>
                 <hr>
-                <p><b>{get_text('solution_label')}</b> {get_text('solution_text', crops=', '.join(recommended_crops[:2]), improvement=improvement)}</p>
+                <p><b>{get_text('solution_label')}</b> {get_text('solution_text', crops=', '.join(crops_list[:2]), improvement=improvement)}</p>
             </div>
             """
+            st.session_state.last_report_html = report_html
+            st.session_state.last_soil_type = soil_type
             st.markdown(report_html, unsafe_allow_html=True)
         else:
             st.error(get_text('no_photo_error'))
+
+    # If a report was generated, show a button to re‑translate it (re‑generate with current language)
+    if st.session_state.last_report_html:
+        if st.button(get_text('translate_report')):
+            # Regenerate the report in the current language using stored data
+            # We need the last analysis data. We can fetch from the latest log entry.
+            if st.session_state.discovery_log:
+                last = st.session_state.discovery_log[-1]
+                soil_type = last["Soil_Type"].lower()
+                # Re‑fetch soil info
+                soil_info = SOIL_TYPES.get(soil_type, SOIL_TYPES["unknown"])
+                lang = st.session_state.language
+                fertility = soil_info["fertility"][lang]
+                crops_list = soil_info["crops"][lang]
+                improvement = soil_info["improvement"][lang]
+                planting_season = soil_info["planting_season"][lang]
+                harvest = soil_info["harvest_months"][lang]
+                estimated_value_usd = last["Est_Value_USD"]
+                estimated_value_htg = estimated_value_usd * 131.19
+                confidence = float(last["AI_Confidence"]) if last["AI_Confidence"] != "?" else 0.8
+
+                report_html = f"""
+                <div class="report-card">
+                    <h2 style="color:#D21034; text-align:center;">{get_text('report_title')}</h2>
+                    <hr>
+                    <p><b>{get_text('soil_type_label')}</b> {soil_type.capitalize()} (AI confidence: {confidence:.2%})</p>
+                    <p><b>{get_text('fertility_label')}</b> {fertility}</p>
+                    <p><b>{get_text('recommended_crops')}</b> {', '.join(crops_list[:5])}</p>
+                    <p><b>{get_text('improvement_label')}</b> {improvement}</p>
+                    <p><b>{get_text('planting_season_label')}</b> {planting_season}</p>
+                    <p><b>{get_text('harvest_label')}</b> {harvest}</p>
+                    <h3 style="color:green;">{get_text('value_usd_label', value=estimated_value_usd)}</h3>
+                    <h3 style="color:#00209F;">{get_text('value_htg_label', value=estimated_value_htg)}</h3>
+                    <hr>
+                    <p><b>{get_text('solution_label')}</b> {get_text('solution_text', crops=', '.join(crops_list[:2]), improvement=improvement)}</p>
+                </div>
+                """
+                st.session_state.last_report_html = report_html
+                st.markdown(report_html, unsafe_allow_html=True)
+                st.success(get_text('report_translated', lang=lang))
 
     # Map section
     st.divider()
@@ -534,7 +775,7 @@ if st.session_state.authenticated:
                 ).add_to(m)
             folium_static(m, width=700, height=500)
         else:
-            st.info("No fields with location data yet. Add coordinates to see them on the map.")
+            st.info(get_text('no_data_info'))
     else:
         st.info(get_text('no_data_info'))
 
@@ -555,7 +796,6 @@ if st.session_state.authenticated:
     else:
         st.info(get_text('no_data_info'))
 
-    # Contact info footer
     st.markdown("---")
     st.markdown(get_text('contact_info'))
 else:
