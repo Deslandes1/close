@@ -1,0 +1,11 @@
+streamlit
+pandas
+numpy
+pillow
+tensorflow
+opencv-python-headless
+av
+streamlit-webrtc
+plotly
+folium
+streamlit-folium
