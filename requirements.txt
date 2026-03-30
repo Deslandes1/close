@@ -1,11 +1,5 @@
 streamlit
 pandas
-numpy
-pillow
-tensorflow
-opencv-python-headless
-av
-streamlit-webrtc
+requests
 plotly
-folium
-streamlit-folium
+numpy
