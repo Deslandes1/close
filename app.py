@@ -88,29 +88,13 @@ SOIL_TYPES = {
         "harvest_months": {"en": "N/A", "fr": "N/A", "es": "N/A", "ht": "N/A"}
     }
 }
-def soil_type_from_text(text):
-    text_lower = text.lower()
-    if any(w in text_lower for w in ["loam", "loamy"]):
-        return "loam"
-    if any(w in text_lower for w in ["clay", "clayey"]):
-        return "clay"
-    if any(w in text_lower for w in ["sand", "sandy"]):
-        return "sandy"
-    if any(w in text_lower for w in ["silt", "silty"]):
-        return "silt"
-    if any(w in text_lower for w in ["peat", "peaty"]):
-        return "peat"
-    if any(w in text_lower for w in ["chalk", "chalky"]):
-        return "chalky"
-    if any(w in text_lower for w in ["rock", "rocky", "stone"]):
-        return "rocky"
-    return "unknown"
 
 # -------------------------------------------------------------------
 # GLOBAL DATABASE & SESSION STATE
 # -------------------------------------------------------------------
 MASTER_KEY = "20082010"
 MONCASH_ID = "50947385663"
+
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
 if 'discovery_log' not in st.session_state:
@@ -127,48 +111,30 @@ if 'current_lon' not in st.session_state:
     st.session_state.current_lon = -72.3
 
 # -------------------------------------------------------------------
-# TRANSLATIONS (full for all UI elements)
+# TRANSLATIONS
 # -------------------------------------------------------------------
 TRANSLATIONS = {
     'en': {
         'app_title': 'AGRICULTURAL AI ENGINE v1.0',
         'app_subtitle': 'Soil Analysis & Crop Planning',
-        'owner_collab': 'Owner: Gesner Deslandes  | Collaborators: Gesner Junior Deslandes, Roosevelt Deslandes, Sebastien Stephane Deslandes & Zendaya Christelle Deslandes',
+        'owner_collab': 'Owner: <strong>Gesner Deslandes</strong> &nbsp;|&nbsp; Collaborators: Gesner Junior Deslandes, Roosevelt Deslandes, Sebastien Stephane Deslandes & Zendaya Christelle Deslandes',
         'made_in_haiti': 'Made in 🇭🇹 Haiti by GlobalInternet.py',
         'contact_info': '📞 Owner Phone: (509) 4738-5663 | 📧 Email: deslandes78@gmail.com',
         'sidebar_title': '🛡️ Access Tool',
-        'sidebar_activation': 'Activation via MonCash: {moncash}',
+        'sidebar_activation': 'Activation via MonCash: **{moncash}**',
         'sidebar_key_label': 'Key:',
         'sidebar_unlock': 'Unlock',
         'sidebar_invalid': 'Invalid Key',
         'sidebar_granted': '✅ ACCESS GRANTED',
         'sidebar_logout': 'Logout',
-        'welcome_sound_js': """
-            function playBeep() {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                oscillator.type = 'sine';
-                oscillator.frequency.value = 880;
-                gainNode.gain.value = 0.3;
-                oscillator.start();
-                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.5);
-                oscillator.stop(audioContext.currentTime + 0.5);
-            }
-            playBeep();
-            const url = new URL(window.location);
-            url.searchParams.delete('play_sound');
-            window.history.replaceState({}, document.title, url.pathname + url.search);
-        """,
+        'welcome_sound_js': "console.log('Access granted');",
         'main_header': 'AGRICULTURAL AI ENGINE v1.0',
         'main_subheader': 'Empower farmers with AI soil intelligence',
         'scan_subheader': '🔍 Soil Analysis',
         'camera_method_label': 'How to capture the soil sample:',
-        'camera_option': '📸 Take photo with camera (reverse button below)',
+        'camera_option': '📸 Take photo with camera',
         'upload_option': '📁 Upload photo from device',
-        'camera_instruction': '📸 Point the camera at the soil surface. Use the Reverse button to switch between front and rear cameras.',
+        'camera_instruction': '📸 Point the camera at the soil surface.',
         'upload_instruction': '📸 Take a photo of your soil and upload it here.',
         'reverse_button': '↻ Reverse Camera',
         'capture_button': '📷 Capture Image',
@@ -182,7 +148,7 @@ TRANSLATIONS = {
         'lon_label': 'Longitude',
         'get_location_button': '📍 Get My Location',
         'photo_label': 'Soil Sample Photo',
-        'notes_label': 'Additional observations (e.g., soil colour, texture):',
+        'notes_label': 'Additional observations:',
         'weight_label': 'Field Area (hectares):',
         'execute_button': '🚀 ANALYSE SOIL',
         'no_photo_error': 'Please capture or upload an image first.',
@@ -198,11 +164,11 @@ TRANSLATIONS = {
         'solution_label': 'Farmer Advice:',
         'solution_text': 'Focus on {crops}. {improvement}',
         'strategic_intel': '🌍 Field History',
-        'recent_log': 'Recent Soil Analyses:',
+        'recent_log': '**Recent Soil Analyses:**',
         'download_button': '📊 Download Analysis History (CSV)',
-        'no_data_info': 'No analyses recorded yet. Perform a scan to generate data.',
+        'no_data_info': 'No analyses recorded yet.',
         'access_warning': 'Please enter your Master Key in the sidebar to begin.',
-        'language_selector': 'Language / Langue / Lang / Lang',
+        'language_selector': 'Language / Langue',
         'unknown_soil': 'Unknown Soil Type',
         'map_title': '🗺️ Analysed Fields Map',
         'map_marker_popup': 'Field: {site}\nSoil: {soil}\nCrops: {crops}',
@@ -212,191 +178,71 @@ TRANSLATIONS = {
     'fr': {
         'app_title': 'MOTEUR IA AGRICOLE v1.0',
         'app_subtitle': 'Analyse du sol et planification des cultures',
-        'owner_collab': 'Propriétaire: Gesner Deslandes  | Collaborateurs: Gesner Junior Deslandes, Roosevelt Deslandes, Sebastien Stephane Deslandes & Zendaya Christelle Deslandes',
+        'owner_collab': 'Propriétaire: <strong>Gesner Deslandes</strong>',
         'made_in_haiti': 'Fabriqué en 🇭🇹 Haïti par GlobalInternet.py',
-        'contact_info': '📞 Téléphone du propriétaire: (509) 4738-5663 | 📧 Email: deslandes78@gmail.com',
+        'contact_info': '📞 (509) 4738-5663 | 📧 deslandes78@gmail.com',
         'sidebar_title': '🛡️ Accès à l’outil',
-        'sidebar_activation': 'Activation via MonCash: {moncash}',
+        'sidebar_activation': 'Activation via MonCash: **{moncash}**',
         'sidebar_key_label': 'Clé:',
         'sidebar_unlock': 'Déverrouiller',
         'sidebar_invalid': 'Clé invalide',
         'sidebar_granted': '✅ ACCÈS AUTORISÉ',
         'sidebar_logout': 'Déconnexion',
-        'welcome_sound_js': """...""",
+        'welcome_sound_js': "console.log('Accès autorisé');",
         'main_header': 'MOTEUR IA AGRICOLE v1.0',
         'main_subheader': 'Donnez du pouvoir aux agriculteurs grâce à l’IA',
         'scan_subheader': '🔍 Analyse du sol',
-        'camera_method_label': 'Comment capturer l’échantillon de sol:',
-        'camera_option': '📸 Prendre une photo avec la caméra (bouton de retournement ci-dessous)',
-        'upload_option': '📁 Télécharger une photo depuis l’appareil',
-        'camera_instruction': '📸 Pointez la caméra vers la surface du sol. Utilisez le bouton Retournement pour passer entre caméra avant et arrière.',
-        'upload_instruction': '📸 Prenez une photo de votre sol et téléchargez-la ici.',
+        'camera_method_label': 'Méthode de capture:',
+        'camera_option': '📸 Prendre une photo',
+        'upload_option': '📁 Télécharger une photo',
+        'camera_instruction': '📸 Pointez la caméra vers le sol.',
+        'upload_instruction': '📸 Téléchargez une photo de votre sol.',
         'reverse_button': '↻ Retourner la caméra',
         'capture_button': '📷 Capturer l’image',
-        'camera_placeholder': 'Le flux vidéo apparaîtra ici après autorisation.',
+        'camera_placeholder': 'Le flux vidéo apparaîtra ici.',
         'site_label': 'Nom du champ:',
         'site_placeholder': 'Champ Nord',
-        'location_label': '📍 Emplacement du champ (Lat/Lon)',
+        'location_label': '📍 Emplacement (Lat/Lon)',
         'location_manual': 'Coordonnées manuelles',
-        'location_auto': 'Utiliser ma position actuelle',
+        'location_auto': 'Utiliser ma position',
         'lat_label': 'Latitude',
         'lon_label': 'Longitude',
         'get_location_button': '📍 Obtenir ma position',
-        'photo_label': 'Photo de l’échantillon de sol',
-        'notes_label': 'Observations supplémentaires (couleur, texture, etc.) :',
-        'weight_label': 'Superficie du champ (hectares):',
+        'photo_label': 'Photo de l’échantillon',
+        'notes_label': 'Observations supplémentaires:',
+        'weight_label': 'Superficie (hectares):',
         'execute_button': '🚀 ANALYSER LE SOL',
         'no_photo_error': 'Veuillez d’abord capturer ou télécharger une image.',
         'report_title': 'RAPPORT D’ANALYSE DU SOL',
         'soil_type_label': 'Type de sol:',
-        'fertility_label': 'Niveau de fertilité:',
-        'recommended_crops': 'Cultures recommandées pour ce sol:',
-        'improvement_label': 'Comment améliorer ce sol:',
-        'planting_season_label': 'Saison de plantation optimale:',
-        'harvest_label': 'Période de récolte prévue:',
-        'value_usd_label': 'Valeur estimée de la récolte (USD) : ${value:,.2f}',
-        'value_htg_label': 'Valeur estimée de la récolte (HTG) : {value:,.2f}',
-        'solution_label': 'Conseil à l’agriculteur:',
+        'fertility_label': 'Fertilité:',
+        'recommended_crops': 'Cultures recommandées:',
+        'improvement_label': 'Amélioration:',
+        'planting_season_label': 'Saison optimale:',
+        'harvest_label': 'Récolte prévue:',
+        'value_usd_label': 'Valeur estimée (USD) : ${value:,.2f}',
+        'value_htg_label': 'Valeur estimée (HTG) : {value:,.2f}',
+        'solution_label': 'Conseil:',
         'solution_text': 'Concentrez-vous sur {crops}. {improvement}',
-        'strategic_intel': '🌍 Historique des champs',
-        'recent_log': 'Analyses de sol récentes:',
-        'download_button': '📊 Télécharger l’historique des analyses (CSV)',
-        'no_data_info': 'Aucune analyse enregistrée pour le moment. Effectuez une analyse pour générer des données.',
-        'access_warning': 'Veuillez entrer votre clé principale dans la barre latérale pour commencer.',
+        'strategic_intel': '🌍 Historique',
+        'recent_log': '**Analyses récentes:**',
+        'download_button': '📊 Télécharger (CSV)',
+        'no_data_info': 'Aucune analyse enregistrée.',
+        'access_warning': 'Entrez votre clé principale.',
         'language_selector': 'Langue / Language',
         'unknown_soil': 'Type de sol inconnu',
-        'map_title': '🗺️ Carte des champs analysés',
-        'map_marker_popup': 'Champ: {site}\nSol: {soil}\nCultures: {crops}',
-        'translate_report': '🌐 Traduire ce rapport',
-        'report_translated': 'Rapport traduit en {lang}'
-    },
-    'es': {
-        'app_title': 'MOTOR IA AGRÍCOLA v1.0',
-        'app_subtitle': 'Análisis de suelo y planificación de cultivos',
-        'owner_collab': 'Propietario: Gesner Deslandes  | Colaboradores: Gesner Junior Deslandes, Roosevelt Deslandes, Sebastien Stephane Deslandes & Zendaya Christelle Deslandes',
-        'made_in_haiti': 'Hecho en 🇭🇹 Haití por GlobalInternet.py',
-        'contact_info': '📞 Teléfono del propietario: (509) 4738-5663 | 📧 Correo: deslandes78@gmail.com',
-        'sidebar_title': '🛡️ Acceso a la herramienta',
-        'sidebar_activation': 'Activación vía MonCash: {moncash}',
-        'sidebar_key_label': 'Clave:',
-        'sidebar_unlock': 'Desbloquear',
-        'sidebar_invalid': 'Clave inválida',
-        'sidebar_granted': '✅ ACCESO CONCEDIDO',
-        'sidebar_logout': 'Cerrar sesión',
-        'welcome_sound_js': """...""",
-        'main_header': 'MOTOR IA AGRÍCOLA v1.0',
-        'main_subheader': 'Empodere a los agricultores con inteligencia artificial',
-        'scan_subheader': '🔍 Análisis del suelo',
-        'camera_method_label': 'Cómo capturar la muestra de suelo:',
-        'camera_option': '📸 Tomar foto con la cámara (botón de volteo abajo)',
-        'upload_option': '📁 Subir foto desde el dispositivo',
-        'camera_instruction': '📸 Apunte la cámara a la superficie del suelo. Use el botón Voltear para cambiar entre cámara frontal y trasera.',
-        'upload_instruction': '📸 Tome una foto de su suelo y súbala aquí.',
-        'reverse_button': '↻ Voltear cámara',
-        'capture_button': '📷 Capturar imagen',
-        'camera_placeholder': 'La transmisión de la cámara aparecerá aquí después de conceder el permiso.',
-        'site_label': 'Nombre del campo:',
-        'site_placeholder': 'Campo Norte',
-        'location_label': '📍 Ubicación del campo (Lat/Lon)',
-        'location_manual': 'Coordenadas manuales',
-        'location_auto': 'Usar mi ubicación actual',
-        'lat_label': 'Latitud',
-        'lon_label': 'Longitud',
-        'get_location_button': '📍 Obtener mi ubicación',
-        'photo_label': 'Foto de la muestra de suelo',
-        'notes_label': 'Observaciones adicionales (color, textura, etc.):',
-        'weight_label': 'Área del campo (hectáreas):',
-        'execute_button': '🚀 ANALIZAR SUELO',
-        'no_photo_error': 'Primero capture o suba una imagen.',
-        'report_title': 'INFORME DE ANÁLISIS DE SUELO',
-        'soil_type_label': 'Tipo de suelo:',
-        'fertility_label': 'Nivel de fertilidad:',
-        'recommended_crops': 'Cultivos recomendados para este suelo:',
-        'improvement_label': 'Cómo mejorar este suelo:',
-        'planting_season_label': 'Temporada de siembra óptima:',
-        'harvest_label': 'Tiempo de cosecha esperado:',
-        'value_usd_label': 'Valor estimado de la cosecha (USD): ${value:,.2f}',
-        'value_htg_label': 'Valor estimado de la cosecha (HTG): {value:,.2f}',
-        'solution_label': 'Consejo para el agricultor:',
-        'solution_text': 'Concéntrese en {crops}. {improvement}',
-        'strategic_intel': '🌍 Historial de campos',
-        'recent_log': 'Análisis de suelo recientes:',
-        'download_button': '📊 Descargar historial de análisis (CSV)',
-        'no_data_info': 'Aún no se han registrado análisis. Realice un análisis para generar datos.',
-        'access_warning': 'Por favor ingrese su clave maestra en la barra lateral para comenzar.',
-        'language_selector': 'Idioma / Language',
-        'unknown_soil': 'Tipo de suelo desconocido',
-        'map_title': '🗺️ Mapa de campos analizados',
-        'map_marker_popup': 'Campo: {site}\nSuelo: {soil}\nCultivos: {crops}',
-        'translate_report': '🌐 Traducir este informe',
-        'report_translated': 'Informe traducido al {lang}'
-    },
-    'ht': {
-        'app_title': 'MOTEUR IA AGRYKÒL v1.0',
-        'app_subtitle': 'Analiz tè ak planifikasyon rekòt',
-        'owner_collab': 'Pwopriyetè: Gesner Deslandes  | Kolaboratè: Gesner Junior Deslandes, Roosevelt Deslandes, Sebastien Stephane Deslandes & Zendaya Christelle Deslandes',
-        'made_in_haiti': 'Fèt nan 🇭🇹 Ayiti pa GlobalInternet.py',
-        'contact_info': '📞 Telefòn pwopriyetè: (509) 4738-5663 | 📧 Imèl: deslandes78@gmail.com',
-        'sidebar_title': '🛡️ Aksè zouti',
-        'sidebar_activation': 'Aktivasyon atravè MonCash: {moncash}',
-        'sidebar_key_label': 'Kle:',
-        'sidebar_unlock': 'Deklannche',
-        'sidebar_invalid': 'Kle pa bon',
-        'sidebar_granted': '✅ AKSÈ AKÒDE',
-        'sidebar_logout': 'Dekonekte',
-        'welcome_sound_js': """...""",
-        'main_header': 'MOTEUR IA AGRYKÒL v1.0',
-        'main_subheader': 'Bay kiltivatè yo pouvwa ak entèlijans atifisyèl',
-        'scan_subheader': '🔍 Analiz tè',
-        'camera_method_label': 'Ki jan pou pran echantiyon tè a:',
-        'camera_option': '📸 Pran foto ak kamera (bouton vire anba a)',
-        'upload_option': '📁 Telechaje foto depi aparèy ou',
-        'camera_instruction': '📸 Montre kamera ou sou sifas tè a. Sèvi ak bouton Vire pou chanje ant kamera devan ak dèyè.',
-        'upload_instruction': '📸 Pran yon foto tè ou epi telechaje li isit la.',
-        'reverse_button': '↻ Vire Kamera',
-        'capture_button': '📷 Pran Foto',
-        'camera_placeholder': 'Flò kamera a ap parèt isit la apre w bay pèmisyon.',
-        'site_label': 'Non jaden:',
-        'site_placeholder': 'Jaden Nò',
-        'location_label': '📍 Kote jaden an (Lat/Lon)',
-        'location_manual': 'Kowòdone manyèl',
-        'location_auto': 'Sèvi ak pozisyon mwen kounye a',
-        'lat_label': 'Latitid',
-        'lon_label': 'Longitid',
-        'get_location_button': '📍 Jwenn pozisyon mwen',
-        'photo_label': 'Foto echantiyon tè',
-        'notes_label': 'Lòt obsèvasyon (koulè, teksti, elatriye):',
-        'weight_label': 'Sifas jaden an (ektar):',
-        'execute_button': '🚀 ANALIZE TÈ',
-        'no_photo_error': 'Tanpri pran yon foto oswa telechaje yon imaj an premye.',
-        'report_title': 'RAPÒ ANALIZ TÈ',
-        'soil_type_label': 'Kalite tè:',
-        'fertility_label': 'Nivo fètilite:',
-        'recommended_crops': 'Rekòt rekòmande pou tè sa a:',
-        'improvement_label': 'Kijan pou amelyore tè sa a:',
-        'planting_season_label': 'Sezon plante pi bon:',
-        'harvest_label': 'Lè rekòlte espere:',
-        'value_usd_label': 'Valè rekòlte estime (USD): ${value:,.2f}',
-        'value_htg_label': 'Valè rekòlte estime (HTG): {value:,.2f}',
-        'solution_label': 'Konsèy pou kiltivatè a:',
-        'solution_text': 'Konsantre ou sou {crops}. {improvement}',
-        'strategic_intel': '🌍 Istwa jaden',
-        'recent_log': 'Analiz tè resan:',
-        'download_button': '📊 Telechaje istorik analiz (CSV)',
-        'no_data_info': 'Pa gen okenn analiz anrejistre ankò. Fè yon analiz pou jenere done.',
-        'access_warning': 'Tanpri antre kle prensipal ou nan ba a pou kòmanse.',
-        'language_selector': 'Lang / Language',
-        'unknown_soil': 'Kalite tè enkoni',
-        'map_title': '🗺️ Kat jaden yo analize',
-        'map_marker_popup': 'Jaden: {site}\nTè: {soil}\nRekòt: {crops}',
-        'translate_report': '🌐 Tradwi rapò sa a',
-        'report_translated': 'Rapò a tradui an {lang}'
-    },
+        'map_title': '🗺️ Carte',
+        'map_marker_popup': 'Champ: {site}\nSol: {soil}',
+        'translate_report': '🌐 Traduire',
+        'report_translated': 'Traduit en {lang}'
+    }
 }
+
 def get_text(key, lang=None, **kwargs):
     if lang is None:
         lang = st.session_state.language
-    text = TRANSLATIONS.get(lang, TRANSLATIONS['en']).get(key, key)
+    lang_dict = TRANSLATIONS.get(lang, TRANSLATIONS['en'])
+    text = lang_dict.get(key, key)
     if kwargs:
         return text.format(**kwargs)
     return text
@@ -407,6 +253,7 @@ def get_text(key, lang=None, **kwargs):
 @st.cache_resource
 def load_model():
     return MobileNetV2(weights='imagenet')
+
 def classify_image(image_bytes):
     try:
         model = load_model()
@@ -415,8 +262,10 @@ def classify_image(image_bytes):
         img_array = np.array(img)
         img_array = np.expand_dims(img_array, axis=0)
         img_array = preprocess_input(img_array)
+
         preds = model.predict(img_array, verbose=0)
         decoded = decode_predictions(preds, top=3)[0]
+
         mapping = {
             'soil': 'loam', 'earth': 'loam', 'dirt': 'loam',
             'sand': 'sandy', 'sandbar': 'sandy',
@@ -439,12 +288,13 @@ def classify_image(image_bytes):
 # VIDEO PROCESSOR
 # -------------------------------------------------------------------
 class VideoProcessor(VideoProcessorBase):
-    def init(self):
+    def __init__(self):
         self.image = None
     def recv(self, frame):
         img = frame.to_ndarray(format="bgr24")
         self.image = img
         return frame
+
 def camera_widget():
     webrtc_ctx = webrtc_streamer(
         key="sample-camera",
@@ -475,17 +325,9 @@ st.set_page_config(page_title="Agricultural AI Engine", layout="centered")
 # Haitian flag
 st.markdown("""
 <div style="display: flex; justify-content: center; margin: 20px 0;">
-    <svg width="320" height="192" viewBox="0 0 960 576" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-        <defs>
-            <clipPath id="a"><path d="M0 0h960v576H0z"/></clipPath>
-            <image id="symbol" width="131" height="114" xlink:href="data:image/png;base64,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"/>
-        </defs>
-        <g clip-path="url(#a)">
-            <rect width="960" height="288" fill="#00209F" />
-            <rect y="288" width="960" height="288" fill="#D21034" />
-            <rect x="360" y="216" width="240" height="144" fill="#FFFFFF" />
-            <use xlink:href="#symbol" x="414.5" y="231"/>
-        </g>
+    <svg width="320" height="192" viewBox="0 0 960 576" xmlns="http://www.w3.org/2000/svg">
+        <rect width="960" height="288" fill="#00209F" />
+        <rect y="288" width="960" height="288" fill="#D21034" />
     </svg>
 </div>
 """, unsafe_allow_html=True)
@@ -505,7 +347,8 @@ with col2:
     if selected_lang != st.session_state.language:
         st.session_state.language = selected_lang
         st.rerun()
-st.markdown(f"<div class='main-header'><h1>{get_text('main_header')}</h1><p>{get_text('main_subheader')}</p></div>", unsafe_allow_html=True)
+
+st.markdown(f"<div style='text-align:center;'><h1>{get_text('main_header')}</h1><p>{get_text('main_subheader')}</p></div>", unsafe_allow_html=True)
 
 # Sidebar authentication
 with st.sidebar:
@@ -526,18 +369,20 @@ with st.sidebar:
             st.session_state.authenticated = False
             st.rerun()
 
-# Welcome sound
-if st.session_state.authenticated and st.query_params.get("play_sound") == "true":
-    st.markdown(f"<script>{get_text('welcome_sound_js')}</script>", unsafe_allow_html=True)
+# Logic flow after Auth
 if st.session_state.authenticated:
     st.subheader(get_text('scan_subheader'))
+
+    # FIXED LINE 565: Added descriptive label and visibility: collapsed
     method = st.radio(
-        get_text('camera_method_label'),
+        label="Capture Selection Method",
         options=['camera', 'upload'],
         format_func=lambda x: get_text('camera_option') if x == 'camera' else get_text('upload_option'),
-        horizontal=True
+        horizontal=True,
+        label_visibility="collapsed"
     )
     st.session_state.camera_method = method
+
     if method == 'camera':
         st.markdown(f"<p style='font-size:0.9rem; color:#555;'>{get_text('camera_instruction')}</p>", unsafe_allow_html=True)
         camera_widget()
@@ -554,4 +399,36 @@ if st.session_state.authenticated:
             b64 = base64.b64encode(bytes_data).decode()
             st.session_state.captured_image = f"data:image/{uploaded.type.split('/')[-1]};base64,{b64}"
             st.rerun()
-    site = st.text_input(get_text('site_label'), get_text('site_placeholder'))
+
+    # Form details
+    site = st.text_input(get_text('site_label'), placeholder=get_text('site_placeholder'))
+    
+    loc_col1, loc_col2 = st.columns(2)
+    with loc_col1:
+        lat = st.number_input(get_text('lat_label'), value=st.session_state.current_lat, format="%.6f")
+    with loc_col2:
+        lon = st.number_input(get_text('lon_label'), value=st.session_state.current_lon, format="%.6f")
+
+    notes = st.text_area(get_text('notes_label'))
+    area = st.number_input(get_text('weight_label'), min_value=0.1, value=1.0)
+
+    # Execution
+    if st.button(get_text('execute_button')):
+        if st.session_state.captured_image:
+            # Classification
+            header, encoded = st.session_state.captured_image.split(",", 1)
+            img_bytes = base64.b64decode(encoded)
+            soil_key, prob = classify_image(img_bytes)
+            
+            soil_info = SOIL_TYPES.get(soil_key, SOIL_TYPES['unknown'])
+            
+            st.write(f"---")
+            st.success(get_text('report_title'))
+            st.write(f"**{get_text('soil_type_label')}** {soil_key.capitalize()}")
+            st.write(f"**{get_text('fertility_label')}** {soil_info['fertility'].get(st.session_state.language)}")
+            st.write(f"**{get_text('recommended_crops')}** {', '.join(soil_info['crops'].get(st.session_state.language))}")
+            st.info(f"**{get_text('improvement_label')}** {soil_info['improvement'].get(st.session_state.language)}")
+        else:
+            st.error(get_text('no_photo_error'))
+else:
+    st.warning(get_text('access_warning'))
